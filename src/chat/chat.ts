@@ -1,7 +1,13 @@
 import { intro, isCancel, log, outro, spinner, text } from "@clack/prompts";
 import { cyan, green, magenta } from "kolorist";
 
+import { BedrockClient } from "../bedrock/bedrock-client";
+
 export class Chat {
+  private bedrockClient: BedrockClient;
+  constructor() {
+    this.bedrockClient = new BedrockClient();
+  }
   public async start(initialPrompt: string) {
     intro(`Starting new conversation`);
     await this.nextLoop(initialPrompt);
@@ -28,9 +34,10 @@ export class Chat {
     }
 
     // todo: ask bedrock
+    const aiResponse = await this.bedrockClient.sendQuestion(question);
 
     infoSpin.stop(magenta("AI"));
-    log.success(`You asked: ${question}. My answer: 42`);
+    log.success(`${aiResponse}`);
     await this.nextLoop();
   }
 }
