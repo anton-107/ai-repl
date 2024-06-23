@@ -6,7 +6,8 @@ import { BedrockClient } from "../bedrock/bedrock-client";
 export class Chat {
   private bedrockClient: BedrockClient;
   constructor() {
-    this.bedrockClient = new BedrockClient();
+    const instructionsPrompt = process.env.INSTRUCTIONS_PROMPT;
+    this.bedrockClient = new BedrockClient(instructionsPrompt);
   }
   public async start(initialPrompt: string) {
     intro(`Starting new conversation`);

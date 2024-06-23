@@ -5,17 +5,31 @@ import {
 } from "@aws-sdk/client-bedrock-runtime";
 
 export class BedrockClient {
+  constructor(private instructionsPrompt: string | undefined = undefined) {}
   public async sendQuestion(userMessage: string) {
     const client = new BedrockRuntimeClient();
     const modelId = "anthropic.claude-3-sonnet-20240229-v1:0";
 
     // Start a conversation with the user message.
-    const conversation: Message[] = [
-      {
-        role: "user",
-        content: [{ text: userMessage }],
-      },
-    ];
+    const conversation: Message[] = [];
+
+    if (this.instructionsPrompt) {
+      conversation.push(
+        {
+          role: "user",
+          content: [{ text: this.instructionsPrompt }],
+        },
+        {
+          role: "assistant",
+          content: [{ text: "Got it. How can I help?" }],
+        },
+      );
+    }
+
+    conversation.push({
+      role: "user",
+      content: [{ text: userMessage }],
+    });
 
     // Create a command with the model ID, the message, and a basic configuration.
     const command = new ConverseCommand({
