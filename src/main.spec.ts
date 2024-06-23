@@ -1,5 +1,3 @@
 describe("main", () => {
-    it("should start cli session", () => {
-
-    });
+  it("should start cli session", () => {});
 });
