@@ -1,11 +1,32 @@
-import { intro, isCancel, log, outro, spinner, text } from "@clack/prompts";
+import {
+  intro,
+  isCancel,
+  log,
+  note,
+  outro,
+  spinner,
+  text,
+} from "@clack/prompts";
 import { cyan, green, magenta } from "kolorist";
 
 import { BedrockClient } from "../bedrock/bedrock-client";
 
+export interface RenderPlugin {
+  render(content: ChatBlock[]): ChatBlock[];
+}
+
+export type SupportedCodingLanguage = "none" | "bash" | "python" | "nodejs";
+
+export interface ChatBlock {
+  type: "text" | "code";
+  codeLanguage: SupportedCodingLanguage;
+  content: string;
+}
+
 export class Chat {
   private bedrockClient: BedrockClient;
-  constructor() {
+
+  constructor(private renderPlugins: RenderPlugin[] = []) {
     const instructionsPrompt = process.env.INSTRUCTIONS_PROMPT;
     this.bedrockClient = new BedrockClient(instructionsPrompt);
   }
@@ -34,11 +55,33 @@ export class Chat {
       return await this.nextLoop();
     }
 
-    // todo: ask bedrock
+    // ask bedrock
     const aiResponse = await this.bedrockClient.sendQuestion(question);
 
+    // render response
+    const plainBlocks: ChatBlock[] = [
+      {
+        type: "text",
+        codeLanguage: "none",
+        content: aiResponse,
+      },
+    ];
+    const blocks: ChatBlock[] = this.renderPlugins.reduce((acc, plugin) => {
+      return plugin.render(acc);
+    }, plainBlocks);
+
     infoSpin.stop(magenta("AI"));
-    log.success(`${aiResponse}`);
+    blocks.forEach((block) => {
+      if (block.type === "code") {
+        note(
+          block.content,
+          block.codeLanguage !== "none" ? block.codeLanguage : "",
+        );
+      } else if (block.content.trim().length > 0) {
+        log.message(`${block.content}`);
+      }
+    });
+
     await this.nextLoop();
   }
 }
