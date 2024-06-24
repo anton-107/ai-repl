@@ -7,26 +7,27 @@ export class MarkdownParser {
     const lex = lexer(text);
 
     return lex.flatMap((x) => {
+      const type = x.type === "code" ? "code" : "text";
       const codeLanguage =
-        x.type === "code" && x.lang ? this.mapCodeLanguage(x.lang) : "none";
+        x.type === "code" ? this.mapCodeLanguage(x.lang) : "none";
       return {
-        type: x.type === "code" ? "code" : "text",
+        type,
         codeLanguage,
-        content:
-          codeLanguage === "none" ? x.raw : x.type === "code" ? x.text : x.raw,
+        content: x.type === "code" ? x.text : x.raw,
       };
     });
   }
-  private mapCodeLanguage(language: string): SupportedCodingLanguage {
+  private mapCodeLanguage(
+    language: string | undefined,
+  ): SupportedCodingLanguage {
     switch (language) {
       case "python":
         return "python";
       case "javascript":
         return "nodejs";
       case "bash":
-        return "bash";
       default:
-        return "none";
+        return "bash";
     }
   }
 }

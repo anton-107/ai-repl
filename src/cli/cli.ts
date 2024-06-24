@@ -2,6 +2,7 @@ import { cli, command } from "cleye";
 
 import { Chat } from "../chat/chat";
 import { MarkdownRenderer } from "../markdown/chat-blocks-renderer";
+import { SyntaxRenderer } from "../syntax-highlighter/syntax-renderer";
 
 export class CommandLineInterface {
   constructor() {}
@@ -16,7 +17,8 @@ export class CommandLineInterface {
           async (argv: { _: string[] }) => {
             const initialPrompt = argv._.join(" ").trim();
             const markdownRenderer = new MarkdownRenderer();
-            const chat = new Chat([markdownRenderer]);
+            const syntaxRenderer = new SyntaxRenderer();
+            const chat = new Chat([markdownRenderer, syntaxRenderer]);
             await chat.start(initialPrompt);
           },
         ),
