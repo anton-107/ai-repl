@@ -4,12 +4,14 @@ import {
   log,
   note,
   outro,
+  select,
   spinner,
   text,
 } from "@clack/prompts";
 import { cyan, green, magenta } from "kolorist";
 
 import { BedrockClient } from "../bedrock/bedrock-client";
+import { ChatContinuationOption, ChatRouter } from "../router/chat-router";
 
 export interface RenderPlugin {
   render(content: ChatBlock[]): ChatBlock[];
@@ -25,6 +27,7 @@ export interface ChatBlock {
 
 export class Chat {
   private bedrockClient: BedrockClient;
+  private router: ChatRouter = new ChatRouter();
 
   constructor(private renderPlugins: RenderPlugin[] = []) {
     const instructionsPrompt = process.env.INSTRUCTIONS_PROMPT;
@@ -42,8 +45,7 @@ export class Chat {
     const question = String(userPrompt || "").trim();
 
     if (isCancel(userPrompt) || question === "exit") {
-      outro(green("Goodbye!"));
-      process.exit(0);
+      this.goodbye();
     }
 
     const infoSpin = spinner();
@@ -59,6 +61,14 @@ export class Chat {
     const aiResponse = await this.bedrockClient.sendQuestion(question);
 
     // render response
+    infoSpin.stop(magenta("AI"));
+    const blocks = this.renderResponse(aiResponse);
+
+    // select next step:
+    return await this.selectNextStep(blocks);
+  }
+
+  private renderResponse(aiResponse: string): ChatBlock[] {
     const plainBlocks: ChatBlock[] = [
       {
         type: "text",
@@ -70,7 +80,6 @@ export class Chat {
       return plugin.render(acc);
     }, plainBlocks);
 
-    infoSpin.stop(magenta("AI"));
     blocks.forEach((block) => {
       if (block.type === "code") {
         note(
@@ -81,7 +90,47 @@ export class Chat {
         log.message(`${block.content}`);
       }
     });
+    return blocks;
+  }
 
-    await this.nextLoop();
+  private async selectNextStep(blocks: ChatBlock[]) {
+    const options = this.router.buildOptions(blocks);
+    if (options.length === 0) {
+      return await this.nextLoop();
+    }
+
+    const nextStep: symbol | ChatContinuationOption = await select({
+      message: "What do you want to do next?",
+      options: options.map((option) => {
+        return {
+          value: option,
+          label: option.label,
+        };
+      }),
+    });
+
+    if (typeof nextStep === "symbol") {
+      return await this.nextLoop();
+    }
+
+    switch (nextStep.action) {
+      case "exit":
+        return this.goodbye();
+      case "keep-chatting":
+        return await this.nextLoop();
+      default:
+        if (typeof nextStep.payload !== "string") {
+          throw Error(`Can not run code without payload`);
+        }
+        return await this.router.routeToNextChat({
+          ...nextStep,
+          payload: nextStep.payload,
+        });
+    }
+  }
+
+  private goodbye() {
+    outro(green("Goodbye!"));
+    process.exit(0);
   }
 }
