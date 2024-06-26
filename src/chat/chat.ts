@@ -122,10 +122,11 @@ export class Chat {
         if (typeof nextStep.payload !== "string") {
           throw Error(`Can not run code without payload`);
         }
-        return await this.router.routeToNextChat({
+        await this.router.routeToNextChat({
           ...nextStep,
           payload: nextStep.payload,
         });
+        return await this.nextLoop();
     }
   }
 
