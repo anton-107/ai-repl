@@ -100,7 +100,7 @@ export class Chat {
     }
 
     const nextStep: symbol | ChatContinuationOption = await select({
-      message: "What do you want to do next?",
+      message: `${magenta("AI:")} What do you want to do next?`,
       options: options.map((option) => {
         return {
           value: option,

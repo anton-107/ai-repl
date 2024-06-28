@@ -1,6 +1,6 @@
 import { confirm, log, note } from "@clack/prompts";
 import execSh from "exec-sh";
-import { bold, red } from "kolorist";
+import { bold, magenta, red } from "kolorist";
 
 interface ExecutionResult {
   stdout: string;
@@ -10,6 +10,7 @@ interface ExecutionResult {
 
 export class BashRunnerChat {
   public async start(inputCommand: string) {
+    log.message(magenta("AI (BashRunner)"), { symbol: "◇" });
     log.message(
       "I am BashRunner agent. I am going to run bash script for you.",
     );
@@ -18,10 +19,11 @@ export class BashRunnerChat {
     note(inputCommand, "bash");
 
     const isConfirmed = await confirm({
-      message: "Shall i go ahead and run this command?",
+      message: `${magenta("AI (BashRunner)")} Shall i go ahead and run this command?`,
     });
 
     if (!isConfirmed) {
+      log.message(magenta("AI (BashRunner)"));
       log.info(
         `Ok. I will ${bold(red("not"))} run this command. Can I help with anything else?`,
       );
@@ -29,18 +31,18 @@ export class BashRunnerChat {
       return;
     }
     const result = await this.executeCommand(inputCommand);
+    log.message(magenta("AI (BashRunner)"));
     log.message(`I tried running this command and these were the outputs:`);
-    log.message(`exit code: ${result.code}`);
     if (result.stdout) {
-      log.message(`stdout: ${result.stdout}`);
+      note(`stdout: ${result.stdout}`, `exit code: ${result.code}`);
     }
     if (result.stderr) {
-      log.message(`stderr: ${result.stderr}`);
+      note(`stderr: ${result.stderr}`, `exit code: ${result.code}`);
     }
     if (!result.stdout && !result.stderr) {
-      log.message("Both stdout and stderr appear to be empty");
+      log.warn("(Both stdout and stderr appear to be empty)");
     }
-    log.info(`What shall i do next?`);
+    log.info(`${magenta("AI (BashRunner):")} What shall i do next?`);
   }
   private async executeCommand(inputCommand: string): Promise<ExecutionResult> {
     let result: { stdout: string; stderr: string };

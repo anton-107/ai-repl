@@ -57,7 +57,7 @@ export class ChatRouter {
             };
           default:
             return {
-              label: `Run suggested command`,
+              label: `Run suggested command ($ ${this.truncateCommand(x.content)})`,
               action: "run-bash",
               payload: x.content,
             };
@@ -77,5 +77,13 @@ export class ChatRouter {
         payload: undefined,
       },
     ];
+  }
+  private truncateCommand(str: string, maxLength: number = 50): string {
+    if (str.length <= maxLength) {
+      return str;
+    }
+
+    const truncatedStr = str.slice(0, maxLength - 3); // Truncate the string, leaving space for the ellipsis
+    return `${truncatedStr}...`; // Append the ellipsis
   }
 }
